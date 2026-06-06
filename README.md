@@ -15,7 +15,7 @@
 
 | Home | Analytics |
 |------|-----------|
-| ![Home](https://scissors-green.vercel.app/og-home.png) | ![Analytics](https://scissors-green.vercel.app/og-analytics.png) |
+| ![Home](home.jpeg) | ![Analytics](analytics.jpeg) |
 
 ---
 
