@@ -17,7 +17,7 @@ export async function GET(
     }
 
     if (link.isExpired || (link.expiresAt && link.expiresAt < Date.now())) {
-      return NextResponse.redirect(new URL('/?expired=true', request.url));
+      return NextResponse.redirect(new URL('/expired', request.url), {status: 410});
     }
 
     const ua = request.headers.get('user-agent') ?? '';
@@ -33,7 +33,7 @@ export async function GET(
       browser,
     });
 
-    return NextResponse.redirect(link.originalUrl);
+    return NextResponse.redirect(link.originalUrl, {status: 302});
   } catch (err) {
     console.error('Redirect error:', err);
     return NextResponse.redirect(new URL('/', request.url));

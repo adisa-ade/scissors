@@ -69,10 +69,23 @@ export default function HomePage({ links, createLink, onNavigate, onOpenQR, user
     }, 350);
   }
 
-   function handleShorten() {
+  function handleShorten() {
     setError('');
     if (!urlValue.trim()) { setError('Please enter a URL.'); return; }
+    
+    // URL format validation
     try { new URL(urlValue.trim()); } catch { setError('Invalid URL format. Make sure to include https://'); return; }
+  
+    // blocklist validation
+    const BLOCKED_DOMAINS = [
+      'bit.ly', 'tinyurl.com', 'goo.gl', 't.co',
+      'phishing.com', 'malware.com', 'spam.com'
+    ];
+    const domain = new URL(urlValue.trim()).hostname.replace('www.', '');
+    if (BLOCKED_DOMAINS.some(b => domain.includes(b))) {
+      setError('This URL is not allowed.');
+      return;
+    }
   
     const slug = slugValue || nanoid6();
   
@@ -84,7 +97,7 @@ export default function HomePage({ links, createLink, onNavigate, onOpenQR, user
     }
   
     try {
-       createLink({
+      createLink({
         slug,
         originalUrl: urlValue.trim(),
         expiresAt: expiryValue ? Date.now() + Number(expiryValue) * 86400000 : null,
@@ -95,12 +108,14 @@ export default function HomePage({ links, createLink, onNavigate, onOpenQR, user
       setTimeout(() => setBtnText('✂ Shorten'), 2000);
     } catch (err: unknown) {
       if (err instanceof Error) {
-        setError(err.message); // catches "Slug already taken" from Convex
+        setError(err.message);
       } else {
         setError('Something went wrong. Please try again.');
       }
     }
   }
+
+
   const s: Record<string, React.CSSProperties> = {
     hero: { padding: '6rem 2rem 4rem', maxWidth: 720, margin: '0 auto', textAlign: 'center' },
     badge: {
@@ -133,10 +148,6 @@ export default function HomePage({ links, createLink, onNavigate, onOpenQR, user
     statNum: { fontSize: '2rem', fontWeight: 800, color: 'var(--accent)' },
     statLbl: { fontSize: '0.8rem', color: 'var(--text2)', marginTop: 4 },
   };
-
-  // function copyResult() {
-  //   navigator.clipboard.writeText('https://scsr.io/' + resultSlug).catch(() => { });
-  // }
   function copyResult() {
     const base = process.env.NEXT_PUBLIC_APP_URL ?? window.location.origin;
     navigator.clipboard.writeText(`${base}/${resultSlug}`).catch(() => {});

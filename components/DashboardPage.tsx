@@ -15,6 +15,12 @@ export default function DashboardPage({ links, onDelete, onNavigate, onOpenQR, o
   const [filter, setFilter] = useState<'all' | 'active' | 'expired'>('all');
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [confirmState, setConfirmState] = useState<{ ids: string[]; title: string; sub: string } | null>(null);
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
+
+  // add to filtered logic
+  const fromTs = dateFrom ? new Date(dateFrom).getTime() : null;
+  const toTs = dateTo ? new Date(dateTo).getTime() + 86400000 : null;
 
   useEffect(() => { setSelected(new Set()); }, [links]);
 
@@ -23,7 +29,8 @@ export default function DashboardPage({ links, onDelete, onNavigate, onOpenQR, o
     const matchSearch = !search || l.slug.includes(search.toLowerCase()) || l.originalUrl.toLowerCase().includes(search.toLowerCase());
     const expired = l.isExpired || (l.expiresAt !== null && l.expiresAt! < now);
     const matchFilter = filter === 'all' || (filter === 'active' && !expired) || (filter === 'expired' && expired);
-    return matchSearch && matchFilter;
+    const matchDate = (!fromTs || l.createdAt >= fromTs) && (!toTs || l.createdAt <= toTs);
+    return matchSearch && matchFilter && matchDate;
   });
 
   function toggleSelect(id: string) {
@@ -97,6 +104,18 @@ export default function DashboardPage({ links, onDelete, onNavigate, onOpenQR, o
         <div style={s.searchWrap}>
           <span style={{ color: 'var(--text3)', fontSize: '0.9rem' }}>🔍</span>
           <input style={s.searchInput} type="text" placeholder="Search links…" value={search} onChange={e => setSearch(e.target.value)} />
+          <input
+            type="date"
+            value={dateFrom}
+            onChange={e => setDateFrom(e.target.value)}
+            style={{ background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '6px 12px', color: 'var(--text)', fontFamily: "'Syne', sans-serif", fontSize: '0.82rem', outline: 'none', cursor: 'pointer' }}
+          />
+          <input
+            type="date"
+            value={dateTo}
+            onChange={e => setDateTo(e.target.value)}
+            style={{ background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '6px 12px', color: 'var(--text)', fontFamily: "'Syne', sans-serif", fontSize: '0.82rem', outline: 'none', cursor: 'pointer' }}
+          />
         </div>
         <FilterPill value="all" label="All" />
         <FilterPill value="active" label="Active" />
@@ -144,13 +163,15 @@ export default function DashboardPage({ links, onDelete, onNavigate, onOpenQR, o
                   </div>
                   <div style={s.origLink} title={l.originalUrl}>{l.originalUrl}</div>
                   {expiryStr && <div style={{ fontSize: '0.72rem', color: 'var(--text3)', marginTop: 2 }}>{expiryStr}</div>}
+                  <div style={{ fontSize: '0.72rem', color: 'var(--text3)', marginTop: 2 }}>
+                    Created {new Date(l.createdAt).toLocaleDateString()}
+                  </div>
                 </div>
                 <div style={s.clicksBlock}>
                   <div style={s.clickNum}>{l.clicks.toLocaleString()}</div>
                   <div style={s.clickLbl}>clicks</div>
                 </div>
                 <div style={s.actions}>
-                  {/* <button style={s.iconBtn} onClick={() => navigator.clipboard.writeText('https://scsr.io/' + l.slug)} title="Copy">📋</button> */}
                   <button style={s.iconBtn} onClick={() => navigator.clipboard.writeText(`${process.env.NEXT_PUBLIC_APP_URL ?? window.location.origin}/${l.slug}`)} title="Copy">📋</button>
                   <button style={s.iconBtn} onClick={() => onOpenQR(l.slug)} title="QR Code">◼</button>
                   <button style={s.iconBtn} onClick={() => onGoAnalytics(l._id)} title="Analytics">📊</button> {/* ← _id */}

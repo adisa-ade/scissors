@@ -1,5 +1,6 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
+import { internalMutation } from './_generated/server';
 
 export const getMyLinks = query({
   args: {},
@@ -22,7 +23,20 @@ export const createLink = mutation({
   },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
-    if (!identity) throw new Error("Not authenticated");
+    if (!identity) {
+      throw new Error('You must be signed in to create links.');
+    }
+    // rate limit all users to 50 links per day
+    const oneDayAgo = Date.now() - 86400000;
+    const recentLinks = await ctx.db
+      .query('links')
+      .withIndex('by_user', q => q.eq('userId', identity.subject))
+      .filter(q => q.gte(q.field('createdAt'), oneDayAgo))
+      .collect();
+
+    if (recentLinks.length >= 50) {
+      throw new Error('Daily limit reached. You can create up to 50 links per day.');
+    }
 
     // check slug not taken
     const existing = await ctx.db
@@ -50,6 +64,18 @@ export const deleteLinks = mutation({
     if (!identity) throw new Error("Not authenticated");
     for (const id of args.ids) {
       await ctx.db.delete(id);
+    }
+  },
+});
+
+export const expireLinks = internalMutation({
+  handler: async (ctx) => {
+    const now = Date.now();
+    const links = await ctx.db.query('links').collect();
+    for (const link of links) {
+      if (!link.isExpired && link.expiresAt && link.expiresAt < now) {
+        await ctx.db.patch(link._id, { isExpired: true });
+      }
     }
   },
 });
