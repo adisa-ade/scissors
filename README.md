@@ -13,9 +13,12 @@
 
 ##  Screenshots
 
-| Home | Analytics |
+| Auth Page | Home |
 |------|-----------|
 | ![Auth Page](./public/authpage.jpeg) | ![Home](./public/home.jpeg) | 
+
+| Dashboard | Analytics |
+|------|-----------|
 | ![Dashboard](./public/dashboard.jpeg) | ![Analytics](./public/analytics.jpeg)|
 
 ---
