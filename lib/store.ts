@@ -81,7 +81,7 @@ export function saveStore(links: Link[], clicks: Click[]) {
   localStorage.setItem('scissor_clicks', JSON.stringify(clicks));
 }
 
-export function createLink(links: Link[], rawUrl: string, customSlug: string, expiryDays: string): { link?: Link; error?: string } {
+export function createLink(links: Link[], rawUrl: string, customSlug: string, expiryDays: string, userId: string = 'anon'): { link?: Link; error?: string } {
   let slug = customSlug || nanoid6();
   slug = slug.toLowerCase().replace(/[^a-z0-9-]/g, '');
   if (customSlug) {
@@ -95,7 +95,7 @@ export function createLink(links: Link[], rawUrl: string, customSlug: string, ex
   const expiresAt = expiryDays ? Date.now() + Number(expiryDays) * 86400000 : null;
   const link: Link = {
     id: 'lnk_' + nanoid6(), slug, originalUrl: rawUrl, clicks: 0,
-    isExpired: false, expiresAt, createdAt: Date.now(), userId: 'anon',
+    isExpired: false, expiresAt, createdAt: Date.now(), userId,
   };
   return { link };
 }

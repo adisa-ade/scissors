@@ -1,5 +1,6 @@
 'use client';
 import React from 'react';
+import { UserButton, Show, SignInButton, SignUpButton, useAuth } from '@clerk/nextjs'
 
 type Page = 'home' | 'dashboard' | 'analytics';
 
@@ -9,6 +10,7 @@ interface NavbarProps {
 }
 
 export default function Navbar({ currentPage, onNavigate }: NavbarProps) {
+  const { isSignedIn } = useAuth();
   return (
     <nav style={{
       position: 'sticky', top: 0, zIndex: 100,
@@ -30,7 +32,7 @@ export default function Navbar({ currentPage, onNavigate }: NavbarProps) {
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-        {(['home', 'dashboard', 'analytics'] as Page[]).map(page => (
+        {(['home', ...(isSignedIn ? ['dashboard', 'analytics'] : [])] as Page[]).map(page => (
           <button key={page} onClick={() => onNavigate(page)} style={{
             padding: '7px 16px', borderRadius: 8, fontFamily: "'Syne', sans-serif",
             fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', border: '1px solid transparent',
@@ -41,17 +43,21 @@ export default function Navbar({ currentPage, onNavigate }: NavbarProps) {
             {page}
           </button>
         ))}
-        <div style={{
-          display: 'inline-flex', alignItems: 'center',
-          background: 'var(--accent-bg)', border: '1px solid var(--accent-border)',
-          color: 'var(--accent)', fontSize: '0.7rem', fontWeight: 700,
-          padding: '2px 8px', borderRadius: 20, letterSpacing: '0.05em', marginLeft: 6,
-        }}>BETA</div>
-        <button style={{
-          padding: '7px 16px', borderRadius: 8, fontFamily: "'Syne', sans-serif",
-          fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', border: 'none',
-          background: 'var(--accent)', color: '#000', marginLeft: 4,
-        }}>Sign up</button>
+        <Show when="signed-out">
+          <SignInButton>
+            <button style={{ padding: '7px 16px', borderRadius: 8, fontFamily: "'Syne', sans-serif", fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', border: 'none', background: 'var(--accent)', color: '#000' }}>
+              Login
+            </button>
+          </SignInButton>
+          <SignUpButton>
+            <button style={{ padding: '7px 16px', borderRadius: 8, fontFamily: "'Syne', sans-serif", fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', border: 'none', background: 'var(--accent2)', color: '#000' }}>
+              Sign Up
+            </button>
+          </SignUpButton>
+        </Show>
+        <Show when="signed-in">
+          <UserButton />
+        </Show>
       </div>
     </nav>
   );

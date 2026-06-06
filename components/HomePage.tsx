@@ -1,12 +1,14 @@
 'use client';
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, createLink, isSlugAvailable } from '@/lib/store';
+import { SignInButton, useAuth } from '@clerk/nextjs';
 
 interface HomePageProps {
   links: Link[];
   onLinkCreated: (link: Link) => void;
   onNavigate: (page: 'home' | 'dashboard' | 'analytics') => void;
   onOpenQR: (slug: string) => void;
+  userId: string;
 }
 
 function animateNum(el: HTMLElement, target: number) {
@@ -23,7 +25,8 @@ function animateNum(el: HTMLElement, target: number) {
   requestAnimationFrame(tick);
 }
 
-export default function HomePage({ links, onLinkCreated, onNavigate, onOpenQR }: HomePageProps) {
+export default function HomePage({ links, onLinkCreated, onNavigate, onOpenQR, userId }: HomePageProps) {
+  const { isSignedIn } = useAuth();
   const [urlValue, setUrlValue] = useState('');
   const [slugValue, setSlugValue] = useState('');
   const [expiryValue, setExpiryValue] = useState('');
@@ -63,7 +66,7 @@ export default function HomePage({ links, onLinkCreated, onNavigate, onOpenQR }:
     setError('');
     if (!urlValue.trim()) { setError('Please enter a URL.'); return; }
     try { new URL(urlValue.trim()); } catch { setError('Invalid URL format. Make sure to include https://'); return; }
-    const result = createLink(links, urlValue.trim(), slugValue, expiryValue);
+    const result = createLink(links, urlValue.trim(), slugValue, expiryValue, userId);
     if (result.error) { setError(result.error); return; }
     if (!result.link) return;
     onLinkCreated(result.link);
@@ -107,7 +110,7 @@ export default function HomePage({ links, onLinkCreated, onNavigate, onOpenQR }:
   };
 
   function copyResult() {
-    navigator.clipboard.writeText('https://scsr.io/' + resultSlug).catch(() => {});
+    navigator.clipboard.writeText('https://scsr.io/' + resultSlug).catch(() => { });
   }
 
   return (
@@ -120,68 +123,81 @@ export default function HomePage({ links, onLinkCreated, onNavigate, onOpenQR }:
           <p style={s.sub}>Cut the clutter. Share cleaner links with click analytics,<br />custom slugs, QR codes, and expiry control.</p>
         </div>
       </div>
-
-      <div style={s.card}>
-        <div style={s.inputRow}>
-          <div style={s.inputWrap}>
-            <span style={{ color: 'var(--text3)', fontSize: '1rem', flexShrink: 0 }}>🔗</span>
-            <input style={s.input} type="url" placeholder="Paste your long URL here…" value={urlValue} onChange={e => { setUrlValue(e.target.value); setError(''); }} />
-          </div>
-          <button style={s.btn} onClick={handleShorten}>{btnText}</button>
-        </div>
-
-        <div style={s.optionsRow}>
-          <div>
-            <label style={s.fieldLabel}>CUSTOM SLUG</label>
-            <div style={s.slugRow}>
-              <span style={s.slugPrefix}>scsr.io/</span>
-              <input style={s.slugInput} type="text" placeholder="my-brand" value={slugValue} onChange={e => handleSlugChange(e.target.value)} maxLength={50} />
+      {isSignedIn ? (
+        <div style={s.card}>
+          <div style={s.inputRow}>
+            <div style={s.inputWrap}>
+              <span style={{ color: 'var(--text3)', fontSize: '1rem', flexShrink: 0 }}>🔗</span>
+              <input style={s.input} type="url" placeholder="Paste your long URL here…" value={urlValue} onChange={e => { setUrlValue(e.target.value); setError(''); }} />
             </div>
-            {slugStatus && (
-              <div style={{ fontSize: '0.72rem', fontWeight: 600, marginTop: 3, color: slugStatus.ok ? 'var(--green)' : 'var(--red)' }}>
-                {slugStatus.text}
+            <button style={s.btn} onClick={handleShorten}>{btnText}</button>
+          </div>
+
+          <div style={s.optionsRow}>
+            <div>
+              <label style={s.fieldLabel}>CUSTOM SLUG</label>
+              <div style={s.slugRow}>
+                <span style={s.slugPrefix}>scsr.io/</span>
+                <input style={s.slugInput} type="text" placeholder="my-brand" value={slugValue} onChange={e => handleSlugChange(e.target.value)} maxLength={50} />
               </div>
-            )}
-          </div>
-          <div>
-            <label style={s.fieldLabel}>EXPIRY</label>
-            <select style={s.select} value={expiryValue} onChange={e => setExpiryValue(e.target.value)}>
-              <option value="">No expiry</option>
-              <option value="1">1 day</option>
-              <option value="7">7 days</option>
-              <option value="30">30 days</option>
-              <option value="90">90 days</option>
-            </select>
-          </div>
-        </div>
-
-        {error && <div style={s.errorMsg}>⚠ {error}</div>}
-
-        {resultSlug && (
-          <div style={s.resultCard}>
-            <div style={s.resultLabel}>YOUR SHORT LINK IS READY</div>
-            <div style={s.resultLink} className="mono">scsr.io/{resultSlug}</div>
-            <div style={s.resultActions}>
-              <button style={s.btnSm} onClick={copyResult}>📋 Copy link</button>
-              <button style={s.btnSm} onClick={() => onOpenQR(resultSlug)}>◼ QR Code</button>
-              <button style={s.btnSm} onClick={() => onNavigate('dashboard')}>→ Dashboard</button>
+              {slugStatus && (
+                <div style={{ fontSize: '0.72rem', fontWeight: 600, marginTop: 3, color: slugStatus.ok ? 'var(--green)' : 'var(--red)' }}>
+                  {slugStatus.text}
+                </div>
+              )}
+            </div>
+            <div>
+              <label style={s.fieldLabel}>EXPIRY</label>
+              <select style={s.select} value={expiryValue} onChange={e => setExpiryValue(e.target.value)}>
+                <option value="">No expiry</option>
+                <option value="1">1 day</option>
+                <option value="7">7 days</option>
+                <option value="30">30 days</option>
+                <option value="90">90 days</option>
+              </select>
             </div>
           </div>
-        )}
-      </div>
 
-      <div style={s.statsStrip}>
-        {[
-          { ref: totalRef, label: 'Links created' },
-          { ref: clicksRef, label: 'Total clicks' },
-          { ref: activeRef, label: 'Active links' },
-        ].map(({ ref, label }) => (
-          <div key={label} style={s.statCell}>
-            <div ref={ref} style={s.statNum}>0</div>
-            <div style={s.statLbl}>{label}</div>
-          </div>
-        ))}
-      </div>
+          {error && <div style={s.errorMsg}>⚠ {error}</div>}
+
+          {resultSlug && (
+            <div style={s.resultCard}>
+              <div style={s.resultLabel}>YOUR SHORT LINK IS READY</div>
+              <div style={s.resultLink} className="mono">scsr.io/{resultSlug}</div>
+              <div style={s.resultActions}>
+                <button style={s.btnSm} onClick={copyResult}>📋 Copy link</button>
+                <button style={s.btnSm} onClick={() => onOpenQR(resultSlug)}>◼ QR Code</button>
+                <button style={s.btnSm} onClick={() => onNavigate('dashboard')}>→ Dashboard</button>
+              </div>
+            </div>
+          )}
+        </div>
+      ) :
+        (<div style={{ textAlign: 'center', marginBottom: '3rem' }}>
+          <SignInButton mode="modal">
+            <button style={{
+              padding: '14px 32px', borderRadius: 'var(--radius)', fontFamily: "'Syne', sans-serif",
+              fontWeight: 700, fontSize: '1rem', cursor: 'pointer', border: 'none',
+              background: 'var(--accent)', color: '#000',
+            }}>
+              Sign in to shorten links
+            </button>
+          </SignInButton>
+        </div>
+        )}
+      {isSignedIn && (
+        <div style={s.statsStrip}>
+          {[
+            { ref: totalRef, label: 'Links created' },
+            { ref: clicksRef, label: 'Total clicks' },
+            { ref: activeRef, label: 'Active links' },
+          ].map(({ ref, label }) => (
+            <div key={label} style={s.statCell}>
+              <div ref={ref} style={s.statNum}>0</div>
+              <div style={s.statLbl}>{label}</div>
+            </div>
+          ))}
+        </div>)}
     </div>
-  );
+  )
 }
