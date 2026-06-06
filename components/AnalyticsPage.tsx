@@ -21,11 +21,11 @@ const CHART_GRID = 'rgba(255,255,255,0.05)';
 const FONT = { family: "'Syne', sans-serif", size: 11 };
 
 export default function AnalyticsPage({ links, clicks, initialLinkId }: AnalyticsPageProps) {
-  const [selectedId, setSelectedId] = useState(initialLinkId || links[0]?._id || ''); // ← _id
+  const [selectedId, setSelectedId] = useState(initialLinkId || links[0]?._id || '');
 
   useEffect(() => {
     if (initialLinkId) setSelectedId(initialLinkId);
-    else if (!selectedId && links[0]) setSelectedId(links[0]._id); // ← _id
+    else if (!selectedId && links[0]) setSelectedId(links[0]._id);
   }, [initialLinkId, links]);
 
   const day = 86400000;
@@ -33,7 +33,6 @@ export default function AnalyticsPage({ links, clicks, initialLinkId }: Analytic
   const allLinkClicks = clicks.filter(c => c.linkId === selectedId);
   const last7 = allLinkClicks.filter(c => c.timestamp >= now - 7 * day);
   const prev7 = allLinkClicks.filter(c => c.timestamp >= now - 14 * day && c.timestamp < now - 7 * day);
-
   const delta = prev7.length > 0 ? Math.round(((last7.length - prev7.length) / prev7.length) * 100) : last7.length > 0 ? 100 : 0;
 
   const dailyLabels: string[] = [];
@@ -60,25 +59,6 @@ export default function AnalyticsPage({ links, clicks, initialLinkId }: Analytic
   const prev7Map = Array(7).fill(0);
   last7.forEach(c => { last7Map[new Date(c.timestamp).getDay()]++; });
   prev7.forEach(c => { prev7Map[new Date(c.timestamp).getDay()]++; });
-
-  const s: Record<string, React.CSSProperties> = {
-    header: { padding: '2.5rem 2.5rem 1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border)' },
-    title: { fontSize: '1.6rem', fontWeight: 800, letterSpacing: '-0.03em' },
-    subtitle: { fontSize: '0.85rem', color: 'var(--text2)', marginTop: 2 },
-    selectBar: { padding: '1rem 2.5rem', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 10 },
-    sel: { background: 'var(--surface2)', border: '1px solid var(--border2)', borderRadius: 'var(--radius)', padding: '8px 14px', color: 'var(--text)', fontFamily: "'Syne', sans-serif", fontWeight: 600, fontSize: '0.85rem', outline: 'none', cursor: 'pointer' },
-    kpiGrid: { display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '1rem', padding: '1.5rem 2.5rem' },
-    kpiCard: { background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', padding: '1.25rem' },
-    kpiLabel: { fontSize: '0.75rem', fontWeight: 600, color: 'var(--text2)', letterSpacing: '0.05em', marginBottom: 8 },
-    kpiValue: { fontSize: '2.2rem', fontWeight: 800, letterSpacing: '-0.03em' },
-    chartsGrid: { display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '1rem', padding: '0 2.5rem 1.5rem' },
-    chartsGrid2: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', padding: '0 2.5rem 1.5rem' },
-    chartCard: { background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', padding: '1.5rem' },
-    chartTitle: { fontSize: '0.95rem', fontWeight: 700, marginBottom: '1.25rem' },
-    chartWrap: { position: 'relative', height: 200 },
-    referrerRow: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10, fontSize: '0.85rem' },
-    refBarWrap: { height: 4, background: 'var(--surface3)', borderRadius: 2, marginTop: 4, overflow: 'hidden' },
-  };
 
   const lineData = {
     labels: dailyLabels,
@@ -122,50 +102,92 @@ export default function AnalyticsPage({ links, clicks, initialLinkId }: Analytic
     },
   };
 
+  const chartCard: React.CSSProperties = {
+    background: 'var(--surface)', border: '1px solid var(--border)',
+    borderRadius: 'var(--radius-lg)', padding: '1.25rem',
+  };
+
   return (
     <div style={{ minHeight: 'calc(100vh - 60px)' }}>
-      <div style={s.header}>
+      <style>{`
+        .an-header { padding: 1.5rem 1.25rem 1.25rem; }
+        .an-title { font-size: 1.3rem; }
+        .an-selectbar { padding: 0.75rem 1.25rem; flex-direction: column; align-items: stretch; gap: 6px; }
+        .an-select { width: 100%; }
+        .an-kpi { grid-template-columns: 1fr; padding: 1rem 1.25rem; gap: 0.75rem; }
+        .an-kpi-value { font-size: 1.8rem; }
+        .an-charts1 { grid-template-columns: 1fr; padding: 0 1.25rem 1rem; }
+        .an-charts2 { grid-template-columns: 1fr; padding: 0 1.25rem 1.5rem; }
+        .an-chart-wrap { height: 180px; }
+
+        @media (min-width: 480px) {
+          .an-kpi { grid-template-columns: repeat(3, 1fr); }
+        }
+
+        @media (min-width: 640px) {
+          .an-header { padding: 2.5rem 2.5rem 1.5rem; }
+          .an-title { font-size: 1.6rem; }
+          .an-selectbar { padding: 1rem 2.5rem; flex-direction: row; align-items: center; gap: 10px; }
+          .an-select { width: auto; }
+          .an-kpi { padding: 1.5rem 2.5rem; gap: 1rem; }
+          .an-kpi-value { font-size: 2.2rem; }
+          .an-charts1 { grid-template-columns: 2fr 1fr; padding: 0 2.5rem 1.5rem; }
+          .an-charts2 { grid-template-columns: 1fr 1fr; padding: 0 2.5rem 1.5rem; }
+          .an-chart-wrap { height: 200px; }
+        }
+      `}</style>
+
+      {/* Header */}
+      <div className="an-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border)' }}>
         <div>
-          <div style={s.title}>Analytics</div>
-          <div style={s.subtitle}>Real-time click data for your links</div>
+          <div className="an-title" style={{ fontWeight: 800, letterSpacing: '-0.03em' }}>Analytics</div>
+          <div style={{ fontSize: '0.85rem', color: 'var(--text2)', marginTop: 2 }}>Real-time click data for your links</div>
         </div>
       </div>
 
-      <div style={s.selectBar}>
-        <span style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text2)' }}>Viewing:</span>
-        <select style={s.sel} value={selectedId} onChange={e => setSelectedId(e.target.value)}>
-          {links.map(l => <option key={l._id} value={l._id}>scsr.io/{l.slug}</option>)} {/* ← _id */}
+      {/* Link selector */}
+      <div className="an-selectbar" style={{ display: 'flex', borderBottom: '1px solid var(--border)' }}>
+        <span style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text2)', whiteSpace: 'nowrap' }}>Viewing:</span>
+        <select
+          className="an-select"
+          style={{ background: 'var(--surface2)', border: '1px solid var(--border2)', borderRadius: 'var(--radius)', padding: '8px 14px', color: 'var(--text)', fontFamily: "'Syne', sans-serif", fontWeight: 600, fontSize: '0.85rem', outline: 'none', cursor: 'pointer' }}
+          value={selectedId}
+          onChange={e => setSelectedId(e.target.value)}
+        >
+          {links.map(l => <option key={l._id} value={l._id}>scsr.io/{l.slug}</option>)}
         </select>
       </div>
 
-      <div style={s.kpiGrid}>
-        <div style={s.kpiCard}>
-          <div style={s.kpiLabel}>TOTAL CLICKS</div>
-          <div style={s.kpiValue}>{allLinkClicks.length.toLocaleString()}</div>
+      {/* KPI cards */}
+      <div className="an-kpi" style={{ display: 'grid' }}>
+        <div style={chartCard}>
+          <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text2)', letterSpacing: '0.05em', marginBottom: 8 }}>TOTAL CLICKS</div>
+          <div className="an-kpi-value" style={{ fontWeight: 800, letterSpacing: '-0.03em' }}>{allLinkClicks.length.toLocaleString()}</div>
         </div>
-        <div style={s.kpiCard}>
-          <div style={s.kpiLabel}>LAST 7 DAYS</div>
-          <div style={s.kpiValue}>{last7.length.toLocaleString()}</div>
+        <div style={chartCard}>
+          <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text2)', letterSpacing: '0.05em', marginBottom: 8 }}>LAST 7 DAYS</div>
+          <div className="an-kpi-value" style={{ fontWeight: 800, letterSpacing: '-0.03em' }}>{last7.length.toLocaleString()}</div>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: '0.78rem', fontWeight: 600, marginTop: 6, color: delta >= 0 ? 'var(--green)' : 'var(--red)' }}>
             {delta >= 0 ? '↑ +' : '↓ '}{delta}% vs prev week
           </div>
         </div>
-        <div style={s.kpiCard}>
-          <div style={s.kpiLabel}>PREV 7 DAYS</div>
-          <div style={s.kpiValue}>{prev7.length.toLocaleString()}</div>
+        <div style={chartCard}>
+          <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text2)', letterSpacing: '0.05em', marginBottom: 8 }}>PREV 7 DAYS</div>
+          <div className="an-kpi-value" style={{ fontWeight: 800, letterSpacing: '-0.03em' }}>{prev7.length.toLocaleString()}</div>
         </div>
       </div>
 
-      <div style={s.chartsGrid}>
-        <div style={s.chartCard}>
-          <div style={s.chartTitle}>Clicks — last 7 days</div>
-          <div style={s.chartWrap}>
+      {/* Charts row 1 — line + doughnut */}
+      <div className="an-charts1" style={{ display: 'grid', gap: '1rem' }}>
+        <div style={chartCard}>
+          <div style={{ fontSize: '0.95rem', fontWeight: 700, marginBottom: '1.25rem' }}>Clicks — last 7 days</div>
+          <div className="an-chart-wrap" style={{ position: 'relative' }}>
             <Line data={lineData} options={lineOptions as Parameters<typeof Line>[0]['options']} />
           </div>
         </div>
-        <div style={s.chartCard}>
-          <div style={s.chartTitle}>Device breakdown</div>
-          <div style={s.chartWrap}>
+        <div style={chartCard}>
+          <div style={{ fontSize: '0.95rem', fontWeight: 700, marginBottom: '1.25rem' }}>Device breakdown</div>
+          <div className="an-chart-wrap" style={{ position: 'relative' }}>
             {devEntries.length > 0
               ? <Doughnut data={pieData} options={pieOptions as Parameters<typeof Doughnut>[0]['options']} />
               : <div style={{ color: 'var(--text3)', fontSize: '0.85rem', paddingTop: 60, textAlign: 'center' }}>No data yet</div>
@@ -182,21 +204,28 @@ export default function AnalyticsPage({ links, clicks, initialLinkId }: Analytic
         </div>
       </div>
 
-      <div style={s.chartsGrid2}>
-        <div style={s.chartCard}>
-          <div style={s.chartTitle}>Top referrers</div>
-          {topRef.map(([name, count]) => (
-            <div key={name}>
-              <div style={s.referrerRow}><span>{name}</span><span style={{ fontWeight: 700 }}>{count}</span></div>
-              <div style={s.refBarWrap}>
-                <div style={{ height: '100%', background: 'var(--accent)', borderRadius: 2, width: `${Math.round(count / maxRef * 100)}%`, transition: 'width 0.6s ease' }} />
+      {/* Charts row 2 — referrers + bar */}
+      <div className="an-charts2" style={{ display: 'grid', gap: '1rem' }}>
+        <div style={chartCard}>
+          <div style={{ fontSize: '0.95rem', fontWeight: 700, marginBottom: '1.25rem' }}>Top referrers</div>
+          {topRef.length === 0
+            ? <div style={{ color: 'var(--text3)', fontSize: '0.85rem' }}>No referrer data yet</div>
+            : topRef.map(([name, count]) => (
+              <div key={name}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10, fontSize: '0.85rem' }}>
+                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '70%' }}>{name}</span>
+                  <span style={{ fontWeight: 700, flexShrink: 0 }}>{count}</span>
+                </div>
+                <div style={{ height: 4, background: 'var(--surface3)', borderRadius: 2, marginTop: 4, overflow: 'hidden' }}>
+                  <div style={{ height: '100%', background: 'var(--accent)', borderRadius: 2, width: `${Math.round(count / maxRef * 100)}%`, transition: 'width 0.6s ease' }} />
+                </div>
               </div>
-            </div>
-          ))}
+            ))
+          }
         </div>
-        <div style={s.chartCard}>
-          <div style={s.chartTitle}>Click activity — comparison</div>
-          <div style={s.chartWrap}>
+        <div style={chartCard}>
+          <div style={{ fontSize: '0.95rem', fontWeight: 700, marginBottom: '1.25rem' }}>Click activity — comparison</div>
+          <div className="an-chart-wrap" style={{ position: 'relative' }}>
             <Bar data={barData} options={barOptions as Parameters<typeof Bar>[0]['options']} />
           </div>
         </div>
