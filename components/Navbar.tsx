@@ -56,7 +56,12 @@ export default function Navbar({ currentPage, onNavigate }: NavbarProps) {
           </SignUpButton>
         </Show>
         <Show when="signed-in">
-          <UserButton />
+          <UserButton appearance={{
+            baseTheme: undefined,
+            elements: {
+              avatarBox: { width: 32, height: 32 }
+            }
+          }} />
         </Show>
       </div>
     </nav>

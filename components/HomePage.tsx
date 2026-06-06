@@ -1,16 +1,22 @@
 'use client';
 import React, { useState, useEffect, useRef } from 'react';
-import { Link, createLink, isSlugAvailable } from '@/lib/store';
+import { Link, isSlugAvailable } from '@/lib/store';
 import { SignInButton, useAuth } from '@clerk/nextjs';
 
 interface HomePageProps {
-  links: Link[];
-  onLinkCreated: (link: Link) => void;
+  links: Link[];  
+  createLink: (args: { slug: string; originalUrl: string; expiresAt: number | null }) => Promise<void>;
   onNavigate: (page: 'home' | 'dashboard' | 'analytics') => void;
   onOpenQR: (slug: string) => void;
   userId: string;
 }
 
+function nanoid6(): string {
+  const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let r = '';
+  for (let i = 0; i < 6; i++) r += chars[Math.floor(Math.random() * chars.length)];
+  return r;
+}
 function animateNum(el: HTMLElement, target: number) {
   const start = parseInt(el.textContent || '0') || 0;
   const diff = target - start;
@@ -24,8 +30,7 @@ function animateNum(el: HTMLElement, target: number) {
   };
   requestAnimationFrame(tick);
 }
-
-export default function HomePage({ links, onLinkCreated, onNavigate, onOpenQR, userId }: HomePageProps) {
+export default function HomePage({ links, createLink, onNavigate, onOpenQR, userId }: HomePageProps) {
   const { isSignedIn } = useAuth();
   const [urlValue, setUrlValue] = useState('');
   const [slugValue, setSlugValue] = useState('');
@@ -62,20 +67,38 @@ export default function HomePage({ links, onLinkCreated, onNavigate, onOpenQR, u
     }, 350);
   }
 
-  function handleShorten() {
+   function handleShorten() {
     setError('');
     if (!urlValue.trim()) { setError('Please enter a URL.'); return; }
     try { new URL(urlValue.trim()); } catch { setError('Invalid URL format. Make sure to include https://'); return; }
-    const result = createLink(links, urlValue.trim(), slugValue, expiryValue, userId);
-    if (result.error) { setError(result.error); return; }
-    if (!result.link) return;
-    onLinkCreated(result.link);
-    setResultSlug(result.link.slug);
-    setUrlValue(''); setSlugValue(''); setExpiryValue(''); setSlugStatus(null);
-    setBtnText('✓ Done!');
-    setTimeout(() => setBtnText('✂ Shorten'), 2000);
+  
+    const slug = slugValue || nanoid6();
+  
+    // slug validation
+    if (slugValue) {
+      const reserved = new Set(['api','admin','dashboard','login','signup','analytics','settings','expired','health']);
+      if (reserved.has(slug)) { setError('This slug is reserved. Please choose another.'); return; }
+      if (slug.length < 3 || slug.length > 50) { setError('Slug must be 3–50 characters.'); return; }
+    }
+  
+    try {
+       createLink({
+        slug,
+        originalUrl: urlValue.trim(),
+        expiresAt: expiryValue ? Date.now() + Number(expiryValue) * 86400000 : null,
+      });
+      setResultSlug(slug);
+      setUrlValue(''); setSlugValue(''); setExpiryValue(''); setSlugStatus(null);
+      setBtnText('✓ Done!');
+      setTimeout(() => setBtnText('✂ Shorten'), 2000);
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message); // catches "Slug already taken" from Convex
+      } else {
+        setError('Something went wrong. Please try again.');
+      }
+    }
   }
-
   const s: Record<string, React.CSSProperties> = {
     hero: { padding: '6rem 2rem 4rem', maxWidth: 720, margin: '0 auto', textAlign: 'center' },
     badge: {
@@ -109,10 +132,13 @@ export default function HomePage({ links, onLinkCreated, onNavigate, onOpenQR, u
     statLbl: { fontSize: '0.8rem', color: 'var(--text2)', marginTop: 4 },
   };
 
+  // function copyResult() {
+  //   navigator.clipboard.writeText('https://scsr.io/' + resultSlug).catch(() => { });
+  // }
   function copyResult() {
-    navigator.clipboard.writeText('https://scsr.io/' + resultSlug).catch(() => { });
+    const base = process.env.NEXT_PUBLIC_APP_URL ?? window.location.origin;
+    navigator.clipboard.writeText(`${base}/${resultSlug}`).catch(() => {});
   }
-
   return (
     <div style={{ minHeight: 'calc(100vh - 60px)' }}>
       <div style={{ position: 'relative' }}>

@@ -1,26 +1,19 @@
 'use client';
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useQuery } from 'convex/react';
+import { api } from '@/convex/_generated/api';
 import Navbar from '@/components/Navbar';
 import AnalyticsPage from '@/components/AnalyticsPage';
-import { Link, Click, loadStore } from '@/lib/store';
 
 export default function Analytics() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const linkId = searchParams.get('linkId') ?? undefined;
-  const [links, setLinks] = useState<Link[]>([]);
-  const [clicks, setClicks] = useState<Click[]>([]);
-  const [mounted, setMounted] = useState(false);
+  const links = useQuery(api.links.getMyLinks) ?? [];
+  const clicks = useQuery(api.links.getClicksByUser) ?? [];
 
-  useEffect(() => {
-    const { links: l, clicks: c } = loadStore();
-    setLinks(l);
-    setClicks(c);
-    setMounted(true);
-  }, []);
-
-  if (!mounted) {
+  if (links === undefined || clicks === undefined) {
     return (
       <div style={{ background: 'var(--bg)', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text3)', fontFamily: "'Syne', sans-serif" }}>
         Loading…

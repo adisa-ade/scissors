@@ -1,6 +1,6 @@
 'use client';
-import React, { useState, useEffect, useRef } from 'react';
-import { Link, Click } from '@/lib/store';
+import React, { useState, useEffect } from 'react';
+import { Doc } from '@/convex/_generated/dataModel';
 import {
   Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement,
   BarElement, ArcElement, Tooltip, Legend, Filler,
@@ -10,8 +10,8 @@ import { Line, Bar, Doughnut } from 'react-chartjs-2';
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, ArcElement, Tooltip, Legend, Filler);
 
 interface AnalyticsPageProps {
-  links: Link[];
-  clicks: Click[];
+  links: Doc<'links'>[];
+  clicks: Doc<'clicks'>[];
   initialLinkId?: string;
 }
 
@@ -21,11 +21,12 @@ const CHART_GRID = 'rgba(255,255,255,0.05)';
 const FONT = { family: "'Syne', sans-serif", size: 11 };
 
 export default function AnalyticsPage({ links, clicks, initialLinkId }: AnalyticsPageProps) {
-  const [selectedId, setSelectedId] = useState(initialLinkId || links[0]?.id || '');
+  const [selectedId, setSelectedId] = useState(initialLinkId || links[0]?._id || ''); // ← _id
 
   useEffect(() => {
     if (initialLinkId) setSelectedId(initialLinkId);
-  }, [initialLinkId]);
+    else if (!selectedId && links[0]) setSelectedId(links[0]._id); // ← _id
+  }, [initialLinkId, links]);
 
   const day = 86400000;
   const now = Date.now();
@@ -35,7 +36,6 @@ export default function AnalyticsPage({ links, clicks, initialLinkId }: Analytic
 
   const delta = prev7.length > 0 ? Math.round(((last7.length - prev7.length) / prev7.length) * 100) : last7.length > 0 ? 100 : 0;
 
-  // Daily line data
   const dailyLabels: string[] = [];
   const dailyData: number[] = [];
   for (let i = 6; i >= 0; i--) {
@@ -46,18 +46,15 @@ export default function AnalyticsPage({ links, clicks, initialLinkId }: Analytic
     dailyData.push(last7.filter(c => c.timestamp >= start && c.timestamp < end).length);
   }
 
-  // Device pie
   const devMap: Record<string, number> = {};
   allLinkClicks.forEach(c => { const d = c.device || 'unknown'; devMap[d] = (devMap[d] || 0) + 1; });
   const devEntries = Object.entries(devMap);
 
-  // Referrers
   const refMap: Record<string, number> = {};
   allLinkClicks.forEach(c => { const r = c.referrer || 'Direct'; refMap[r] = (refMap[r] || 0) + 1; });
   const topRef = Object.entries(refMap).sort((a, b) => b[1] - a[1]).slice(0, 5);
   const maxRef = topRef[0]?.[1] || 1;
 
-  // Bar chart
   const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
   const last7Map = Array(7).fill(0);
   const prev7Map = Array(7).fill(0);
@@ -137,7 +134,7 @@ export default function AnalyticsPage({ links, clicks, initialLinkId }: Analytic
       <div style={s.selectBar}>
         <span style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text2)' }}>Viewing:</span>
         <select style={s.sel} value={selectedId} onChange={e => setSelectedId(e.target.value)}>
-          {links.map(l => <option key={l.id} value={l.id}>scsr.io/{l.slug}</option>)}
+          {links.map(l => <option key={l._id} value={l._id}>scsr.io/{l.slug}</option>)} {/* ← _id */}
         </select>
       </div>
 

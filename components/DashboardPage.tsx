@@ -1,9 +1,9 @@
 'use client';
 import React, { useState, useEffect } from 'react';
-import { Link } from '@/lib/store';
+import { Doc } from '@/convex/_generated/dataModel';
 
 interface DashboardPageProps {
-  links: Link[];
+  links: Doc<'links'>[];
   onDelete: (ids: string[]) => void;
   onNavigate: (page: 'home' | 'dashboard' | 'analytics') => void;
   onOpenQR: (slug: string) => void;
@@ -21,7 +21,7 @@ export default function DashboardPage({ links, onDelete, onNavigate, onOpenQR, o
   const now = Date.now();
   const filtered = links.filter(l => {
     const matchSearch = !search || l.slug.includes(search.toLowerCase()) || l.originalUrl.toLowerCase().includes(search.toLowerCase());
-    const expired = l.isExpired || (l.expiresAt !== null && l.expiresAt < now);
+    const expired = l.isExpired || (l.expiresAt !== null && l.expiresAt! < now);
     const matchFilter = filter === 'all' || (filter === 'active' && !expired) || (filter === 'expired' && expired);
     return matchSearch && matchFilter;
   });
@@ -125,12 +125,12 @@ export default function DashboardPage({ links, onDelete, onNavigate, onOpenQR, o
           </div>
         ) : (
           filtered.map(l => {
-            const expired = l.isExpired || (l.expiresAt !== null && l.expiresAt < now);
-            const sel = selected.has(l.id);
+            const expired = l.isExpired || (l.expiresAt !== null && l.expiresAt! < now);
+            const sel = selected.has(l._id); // ← _id
             const expiryStr = l.expiresAt ? `Expires ${new Date(l.expiresAt).toLocaleDateString()}` : '';
             return (
-              <div key={l.id} style={{ ...s.row, ...(sel ? { borderColor: 'var(--accent-border)', background: 'var(--accent-bg)' } : {}) }}>
-                <div onClick={() => toggleSelect(l.id)} style={{ ...s.check, ...(sel ? { background: 'var(--accent)', borderColor: 'var(--accent)', color: '#000' } : {}) }}>
+              <div key={l._id} style={{ ...s.row, ...(sel ? { borderColor: 'var(--accent-border)', background: 'var(--accent-bg)' } : {}) }}> {/* ← _id */}
+                <div onClick={() => toggleSelect(l._id)} style={{ ...s.check, ...(sel ? { background: 'var(--accent)', borderColor: 'var(--accent)', color: '#000' } : {}) }}> {/* ← _id */}
                   {sel ? '✓' : ''}
                 </div>
                 <div style={s.info}>
@@ -150,10 +150,11 @@ export default function DashboardPage({ links, onDelete, onNavigate, onOpenQR, o
                   <div style={s.clickLbl}>clicks</div>
                 </div>
                 <div style={s.actions}>
-                  <button style={s.iconBtn} onClick={() => navigator.clipboard.writeText('https://scsr.io/' + l.slug)} title="Copy">📋</button>
+                  {/* <button style={s.iconBtn} onClick={() => navigator.clipboard.writeText('https://scsr.io/' + l.slug)} title="Copy">📋</button> */}
+                  <button style={s.iconBtn} onClick={() => navigator.clipboard.writeText(`${process.env.NEXT_PUBLIC_APP_URL ?? window.location.origin}/${l.slug}`)} title="Copy">📋</button>
                   <button style={s.iconBtn} onClick={() => onOpenQR(l.slug)} title="QR Code">◼</button>
-                  <button style={s.iconBtn} onClick={() => onGoAnalytics(l.id)} title="Analytics">📊</button>
-                  <button style={{ ...s.iconBtn }} onClick={() => handleDelete([l.id], 'Delete this link?', `scsr.io/${l.slug} will stop working.`)} title="Delete">🗑</button>
+                  <button style={s.iconBtn} onClick={() => onGoAnalytics(l._id)} title="Analytics">📊</button> {/* ← _id */}
+                  <button style={s.iconBtn} onClick={() => handleDelete([l._id], 'Delete this link?', `scsr.io/${l.slug} will stop working.`)} title="Delete">🗑</button> {/* ← _id */}
                 </div>
               </div>
             );

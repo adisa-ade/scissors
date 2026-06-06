@@ -1,42 +1,28 @@
 'use client';
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import { useQuery, useMutation } from 'convex/react';
+import { api } from '@/convex/_generated/api';
+import { Id } from '@/convex/_generated/dataModel';
 import Navbar from '@/components/Navbar';
 import DashboardPage from '@/components/DashboardPage';
 import QRModal from '@/components/QRModal';
-import { Link, Click, loadStore, saveStore } from '@/lib/store';
 
 export default function Dashboard() {
   const router = useRouter();
-  const [links, setLinks] = useState<Link[]>([]);
-  const [clicks, setClicks] = useState<Click[]>([]);
+  const links = useQuery(api.links.getMyLinks) ?? [];
+  const deleteLinks = useMutation(api.links.deleteLinks);
   const [qrSlug, setQrSlug] = useState<string | null>(null);
-  const [mounted, setMounted] = useState(false);
 
-  useEffect(() => {
-    const { links: l, clicks: c } = loadStore();
-    setLinks(l);
-    setClicks(c);
-    setMounted(true);
-  }, []);
-
-  const handleDelete = useCallback((ids: string[]) => {
-    setLinks(prev => {
-      const next = prev.filter(l => !ids.includes(l.id));
-      setClicks(prevClicks => {
-        const nextClicks = prevClicks.filter(c => !ids.includes(c.linkId));
-        saveStore(next, nextClicks);
-        return nextClicks;
-      });
-      return next;
-    });
-  }, []);
+  const handleDelete = useCallback(async (ids: string[]) => {
+    await deleteLinks({ ids: ids as Id<'links'>[] });
+  }, [deleteLinks]);
 
   const handleGoAnalytics = useCallback((linkId: string) => {
     router.push(`/analytics?linkId=${linkId}`);
   }, [router]);
 
-  if (!mounted) {
+  if (links === undefined) {
     return (
       <div style={{ background: 'var(--bg)', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text3)', fontFamily: "'Syne', sans-serif" }}>
         Loading…
