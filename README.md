@@ -15,7 +15,7 @@
 
 | Home | Analytics |
 |------|-----------|
-| ![Home](home.jpeg) | ![Analytics](analytics.jpeg) |
+| ![Home](./public/home.jpeg) | ![Analytics](./public/analytics.jpeg) |
 
 ---
 
