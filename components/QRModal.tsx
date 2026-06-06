@@ -19,7 +19,8 @@ export default function QRModal({ slug, onClose }: QRModalProps) {
 
   useEffect(() => {
     if (!QRCode || !canvasRef.current || !slug) return;
-    QRCode.toCanvas(canvasRef.current, 'https://scsr.io/' + slug, {
+    // QRCode.toCanvas(canvasRef.current, 'https://scsr.io/' + slug, {
+      QRCode.toCanvas(canvasRef.current, `${process.env.NEXT_PUBLIC_APP_URL ?? window.location.origin}/${slug}`, {
       width: 160,
       color: { dark: fg, light: bg },
       errorCorrectionLevel: ecc as 'L' | 'M' | 'Q' | 'H',
