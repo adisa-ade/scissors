@@ -100,7 +100,7 @@ export function createLink(links: Link[], rawUrl: string, customSlug: string, ex
   return { link };
 }
 
-export function isSlugAvailable(links: Link[], slug: string): 'ok' | 'reserved' | 'taken' | 'short' {
+export function isSlugAvailable(links: { slug: string }[], slug: string): 'ok' | 'reserved' | 'taken' | 'short' {
   if (slug.length < 3) return 'short';
   if (RESERVED.has(slug)) return 'reserved';
   if (links.find(l => l.slug === slug)) return 'taken';

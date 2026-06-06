@@ -1,11 +1,13 @@
 'use client';
 import React, { useState, useEffect, useRef } from 'react';
-import { Link, isSlugAvailable } from '@/lib/store';
+import { isSlugAvailable } from '@/lib/store';
+import { Doc } from '@/convex/_generated/dataModel';
+import { Id } from '@/convex/_generated/dataModel';
 import { SignInButton, useAuth } from '@clerk/nextjs';
 
 interface HomePageProps {
-  links: Link[];  
-  createLink: (args: { slug: string; originalUrl: string; expiresAt: number | null }) => Promise<void>;
+  links: Doc<"links">[];  
+  createLink: (args: { slug: string; originalUrl: string; expiresAt: number | null }) => Promise<Id<'links'>>;
   onNavigate: (page: 'home' | 'dashboard' | 'analytics') => void;
   onOpenQR: (slug: string) => void;
   userId: string;
