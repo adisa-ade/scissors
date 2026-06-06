@@ -15,7 +15,8 @@
 
 | Home | Analytics |
 |------|-----------|
-| ![Home](./public/home.jpeg) | ![Dashboard](./public/dashboard.jpeg) | ![Analytics](./public/analytics.jpeg)
+| ![Auth Page](./public/authpage.jpeg) | ![Home](./public/home.jpeg) | 
+| ![Dashboard](./public/dashboard.jpeg) | ![Analytics](./public/analytics.jpeg)|
 
 ---
 
