@@ -3,6 +3,12 @@ import { ConvexHttpClient } from 'convex/browser'
 import { api } from '@/convex/_generated/api'
 
 const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!)
+const RESERVED = new Set([
+  'dashboard', 'analytics', 'sign-in', 'sign-up',
+  'api', 'admin', 'login', 'signup', 'settings',
+  'expired', 'health', '_next', 'favicon.ico'
+])
+
 
 export async function GET(
   request: NextRequest,
@@ -10,6 +16,11 @@ export async function GET(
 ) {
   try {
     const { slug } = await params;
+
+    if (RESERVED.has(slug)) {
+      return NextResponse.next();
+    }
+
     const link = await convex.query(api.links.getBySlug, { slug });
 
     if (!link) {
